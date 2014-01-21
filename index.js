@@ -11,7 +11,11 @@ function createSourceInvoker(source) {
 					return cb(err);
 				}
 
-				result = source.onerror(err);
+				try {
+					result = source.onerror(err);
+				} catch (e) {
+					return cb(e);
+				}
 			} else {
 				if (source.onsuccess) {
 					result = source.onsuccess(res);

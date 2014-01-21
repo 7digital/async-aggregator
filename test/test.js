@@ -86,5 +86,20 @@ describe('aggregate', function () {
 		});
 	});
 
+	it('should catch and propagate errors thrown in onerror', function (done) {
+		aggregate({
+			foo: {
+				invoke: wontError,
+				onsuccess: mapSuccess
+			},
+			bar: {
+				invoke: willError,
+				onerror: function (err) { throw err; }
+			}
+		}, function (err, res) {
+			assert.ok(err);
+			done();
+		});
+	});
 });
 
