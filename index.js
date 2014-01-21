@@ -25,7 +25,7 @@ function createSourceInvoker(source) {
 				value: result
 			});
 		});
-	}
+	};
 }
 
 // Make a bunch of async calls in parallel and specify handlers for error or
@@ -47,7 +47,7 @@ function createSourceInvoker(source) {
 // `callback` @function - A callback function with either an unhandled error
 // or the aggregate result.
 //
-function mashup(manifest, cb) {
+function aggregate(manifest, cb) {
 	var invokers = [];
 
 	function registerInvoker(val, key) {
@@ -90,4 +90,4 @@ function mashup(manifest, cb) {
 	});
 }
 
-module.exports = exports = mashup;
+module.exports = exports = aggregate;
