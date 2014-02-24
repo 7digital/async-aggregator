@@ -78,16 +78,17 @@ function aggregate(manifest, cb) {
 		}
 
 		_.each(resultArr, function mapResultForCallee(result) {
-			if (aggregateResult[result.name]) {
-				if (!_.isArray(aggregateResult[result.name])) {
-					aggregateResult[result.name] =
-						[aggregateResult[result.name]];
+			if (!aggregateResult[result.name]) {
+				if (_.isArray(manifest[result.name])) {
+					aggregateResult[result.name] = [];
 				}
-
-				return aggregateResult[result.name].push(result.value);
 			}
 
-			aggregateResult[result.name] = result.value;
+			if (_.isArray(aggregateResult[result.name])) {
+				aggregateResult[result.name].push(result.value);
+			} else {
+				aggregateResult[result.name] = result.value;
+			}
 		});
 
 		return cb(null, aggregateResult);

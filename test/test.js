@@ -54,6 +54,18 @@ describe('aggregate', function () {
 		});
 	});
 
+	it('should handle arrays of one item', function (done) {
+		aggregate({
+			foo: [{
+				invoke: wontError,
+				onsuccess: mapSuccess
+			}]
+		}, function (err, res) {
+			assert.deepEqual(res, { foo: ['mapped'] });
+			done(err);
+		});
+	});
+
 	it('should propagate unmapped results', function (done) {
 		aggregate({
 			foo: {
