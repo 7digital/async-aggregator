@@ -13,12 +13,16 @@ function willError(cb) {
 	});
 }
 
-function mapSuccess(res) {
+function returnMapped(res) {
 	return 'mapped';
 }
 
-function ignoreError(err) {
+function returnDefault(err) {
 	return 'defaulted';
+}
+
+function returnUndefined(err) {
+	return void 0;
 }
 
 describe('aggregate', function () {
@@ -27,11 +31,11 @@ describe('aggregate', function () {
 		aggregate({
 			foo: {
 				invoke: wontError,
-				onsuccess: mapSuccess
+				onsuccess: returnMapped
 			},
 			bar: {
 				invoke: willError,
-				onerror: ignoreError
+				onerror: returnDefault
 			}
 		}, function (err, res) {
 			assert.deepEqual(res, { foo: 'mapped', bar: 'defaulted' });
@@ -43,13 +47,72 @@ describe('aggregate', function () {
 		aggregate({
 			foo: [{
 				invoke: wontError,
-				onsuccess: mapSuccess
+				onsuccess: returnMapped
 			},{
 				invoke: wontError,
-				onsuccess: mapSuccess
+				onsuccess: returnMapped
 			}]
 		}, function (err, res) {
 			assert.deepEqual(res, { foo: ['mapped', 'mapped'] });
+			done(err);
+		});
+	});
+
+	it('should remove undefined items from arrays', function (done) {
+		aggregate({
+			foo: [{
+				invoke: wontError,
+				onsuccess: returnMapped
+			},{
+				invoke: willError,
+				onerror: returnUndefined
+			},{
+				invoke: willError,
+				onerror: returnDefault
+			},{
+				invoke: willError,
+				onerror: returnUndefined
+			},{
+				invoke: wontError,
+				onsuccess: returnDefault
+			}]
+		}, function (err, res) {
+			assert.deepEqual(res, { foo: ['mapped', 'defaulted', 'defaulted'] });
+			done(err);
+		});
+	});
+
+	it('should create properties for all manifest items regardless of ' +
+		'whether they receive results', function (done) {
+		aggregate({
+			foo: [{
+				invoke: wontError,
+				onsuccess: returnUndefined
+			}],
+			bar: {
+				invoke: wontError,
+				onsuccess: returnUndefined
+			}
+		}, function (err, res) {
+			assert.deepEqual(res, { foo: [], bar: undefined });
+			done(err);
+		});
+	});
+
+	it('should always return an array', function (done) {
+		aggregate({
+			foo: [{
+				invoke: willError,
+				onerror: returnUndefined
+			},{
+				invoke: willError,
+				onerror: returnUndefined
+			},{
+				invoke: wontError,
+				onsuccess: returnUndefined
+			}]
+		}, function (err, res) {
+			assert.deepEqual(res, { foo: [] });
 			done(err);
 		});
 	});
@@ -58,7 +121,7 @@ describe('aggregate', function () {
 		aggregate({
 			foo: [{
 				invoke: wontError,
-				onsuccess: mapSuccess
+				onsuccess: returnMapped
 			}]
 		}, function (err, res) {
 			assert.deepEqual(res, { foo: ['mapped'] });
@@ -70,11 +133,11 @@ describe('aggregate', function () {
 		aggregate({
 			foo: {
 				invoke: wontError,
-				onerror: ignoreError
+				onerror: returnDefault
 			},
 			bar: {
 				invoke: willError,
-				onerror: ignoreError
+				onerror: returnDefault
 			}
 		}, function (err, res) {
 			assert.deepEqual(res, { foo: { original: 'result' }, bar: 'defaulted' });
@@ -86,11 +149,11 @@ describe('aggregate', function () {
 		aggregate({
 			foo: {
 				invoke: wontError,
-				onerror: ignoreError
+				onerror: returnDefault
 			},
 			bar: {
 				invoke: willError,
-				onsuccess: mapSuccess
+				onsuccess: returnMapped
 			}
 		}, function (err, res) {
 			assert.ok(err);
@@ -102,7 +165,7 @@ describe('aggregate', function () {
 		aggregate({
 			foo: {
 				invoke: wontError,
-				onsuccess: mapSuccess
+				onsuccess: returnMapped
 			},
 			bar: {
 				invoke: willError,
