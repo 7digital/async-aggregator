@@ -32,6 +32,32 @@ function createSourceInvoker(source) {
 	};
 }
 
+function createAggregateProperties(manifest, aggregateResult) {
+	_.each(_.keys(manifest), function createAggregateProperties(key) {
+		if (_.isArray(manifest[key])) {
+			aggregateResult[key] = [];
+		} else {
+			aggregateResult[key] = {};
+		}
+	});
+
+	return aggregateResult;
+}
+
+function populateAggregateResultFromResults(aggregateResult, resultArr) {
+	_.each(resultArr, function mapResultForCallee(result) {
+		if (_.isArray(aggregateResult[result.name])) {
+			if (result.value !== undefined) {
+				aggregateResult[result.name].push(result.value);
+			}
+		} else {
+			aggregateResult[result.name] = result.value;
+		}
+	});
+
+	return aggregateResult;
+}
+
 // Make a bunch of async calls in parallel and specify handlers for error or
 // success conditions that map onto an aggregate result object.
 //
@@ -77,23 +103,9 @@ function aggregate(manifest, cb) {
 			return cb(err);
 		}
 
-		_.each(_.keys(manifest), function createAggregateProperties(key) {
-			if (_.isArray(manifest[key])) {
-				aggregateResult[key] = [];
-			} else {
-				aggregateResult[key] = {};
-			}
-		});
-
-		_.each(resultArr, function mapResultForCallee(result) {
-			if (_.isArray(aggregateResult[result.name])) {
-				if (result.value !== undefined) {
-					aggregateResult[result.name].push(result.value);
-				}
-			} else {
-				aggregateResult[result.name] = result.value;
-			}
-		});
+		aggregateResult = createAggregateProperties(manifest, aggregateResult);
+		aggregateResult = populateAggregateResultFromResults(aggregateResult,
+			resultArr);
 
 		return cb(null, aggregateResult);
 	});
