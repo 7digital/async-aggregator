@@ -77,15 +77,19 @@ function aggregate(manifest, cb) {
 			return cb(err);
 		}
 
-		_.each(resultArr, function mapResultForCallee(result) {
-			if (!aggregateResult[result.name]) {
-				if (_.isArray(manifest[result.name])) {
-					aggregateResult[result.name] = [];
-				}
+		_.each(_.keys(manifest), function createAggregateProperties(key) {
+			if (_.isArray(manifest[key])) {
+				aggregateResult[key] = [];
+			} else {
+				aggregateResult[key] = {};
 			}
+		});
 
+		_.each(resultArr, function mapResultForCallee(result) {
 			if (_.isArray(aggregateResult[result.name])) {
-				aggregateResult[result.name].push(result.value);
+				if (result.value !== undefined) {
+					aggregateResult[result.name].push(result.value);
+				}
 			} else {
 				aggregateResult[result.name] = result.value;
 			}
