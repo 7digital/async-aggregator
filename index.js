@@ -4,46 +4,69 @@ var domain = require('domain');
 
 function createSourceInvoker(source) {
 	return function sourceInvoker(cb) {
+		var cbCtx = this;
 
-		var invokeDomain = domain.create();
+		var parentDomain, invokeDomain;
+
+		if (process.domain) {
+			//Save the parent domain so we can restore it. Tried using nested
+			//domains rather than tracking explicitly but they don't appear
+			//to work as expected currently - exiting the domain clears the
+			//entire domain stack rather than popping.
+			parentDomain = process.domain;
+		}
+
+		invokeDomain = domain.create();
+
+		function wrappedCb() {
+			//Restore the parent domain (if there was one)
+			//before calling userland callback
+			var args = arguments;
+			invokeDomain.exit();
+
+			if (parentDomain) {
+				parentDomain.run(function () {
+					cb.apply(cbCtx, args);
+				});
+			} else {
+				cb.apply(cbCtx, args);
+			}
+		}
+
 		invokeDomain.on('error', function (err) {
 			invokeDomain.dispose();
 			cb(err);
 		});
 
-		var doInvoke = source.invoke.bind(source,
-			function handleSourceResponse(err, res) {
+		invokeDomain.run(function () {
+			source.invoke(function handleSourceResponse(err, res) {
 
-			var result;
+				var result;
 
-			if (err) {
-				if (!source.onerror) {
-					invokeDomain.exit();
-					return cb(err);
-				}
+				if (err) {
+					if (!source.onerror) {
+						return wrappedCb(err);
+					}
 
-				try {
-					result = source.onerror(err);
-				} catch (e) {
-					invokeDomain.exit();
-					return cb(e);
-				}
-			} else {
-				if (source.onsuccess) {
-					result = source.onsuccess(res);
+					try {
+						result = source.onerror(err);
+					} catch (e) {
+						return wrappedCb(e);
+					}
 				} else {
-					result = res;
+					if (source.onsuccess) {
+						result = source.onsuccess(res);
+					} else {
+						result = res;
+					}
 				}
-			}
 
-			invokeDomain.exit();
-			return cb(null, {
-				name: source.name,
-				value: result
+				return wrappedCb(null, {
+					name: source.name,
+					value: result
+				});
 			});
 		});
-
-		invokeDomain.run(doInvoke);
 	};
 }
 
