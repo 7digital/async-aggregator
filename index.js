@@ -18,14 +18,14 @@ function createSourceInvoker(source) {
 
 			if (err) {
 				if (!source.onerror) {
-					invokeDomain.dispose();
+					invokeDomain.exit();
 					return cb(err);
 				}
 
 				try {
 					result = source.onerror(err);
 				} catch (e) {
-					invokeDomain.dispose();
+					invokeDomain.exit();
 					return cb(e);
 				}
 			} else {
@@ -36,7 +36,7 @@ function createSourceInvoker(source) {
 				}
 			}
 
-			invokeDomain.dispose();
+			invokeDomain.exit();
 			return cb(null, {
 				name: source.name,
 				value: result
