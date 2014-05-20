@@ -1,19 +1,31 @@
 var _ = require('lodash');
 var async = require('async');
+var domain = require('domain');
 
 function createSourceInvoker(source) {
 	return function sourceInvoker(cb) {
-		source.invoke(function handleSourceResponse(err, res) {
+
+		var invokeDomain = domain.create();
+		invokeDomain.on('error', function (err) {
+			invokeDomain.dispose();
+			cb(err);
+		});
+
+		var doInvoke = source.invoke.bind(source,
+			function handleSourceResponse(err, res) {
+
 			var result;
 
 			if (err) {
 				if (!source.onerror) {
+					invokeDomain.dispose();
 					return cb(err);
 				}
 
 				try {
 					result = source.onerror(err);
 				} catch (e) {
+					invokeDomain.dispose();
 					return cb(e);
 				}
 			} else {
@@ -24,11 +36,14 @@ function createSourceInvoker(source) {
 				}
 			}
 
+			invokeDomain.dispose();
 			return cb(null, {
 				name: source.name,
 				value: result
 			});
 		});
+
+		invokeDomain.run(doInvoke);
 	};
 }
 

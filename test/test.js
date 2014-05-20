@@ -176,5 +176,18 @@ describe('aggregate', function () {
 			done();
 		});
 	});
+
+	it('should catch errors in a separate tick context', function (done) {
+		var f = function () {
+			process.nextTick(function () {
+				throw new Error('async death');
+			});
+		};
+
+		aggregate({ foo: { invoke: f } }, function (err, res) {
+			assert.ok(err);
+			done();
+		});
+	});
 });
 
