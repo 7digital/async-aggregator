@@ -2,6 +2,7 @@
   "name": "async-aggregator",
   "version": "0.0.0",
   "description": "Aggregates results from various async sources",
+  "publishConfig": { "registry": "http://npm-registry.nix.sys.7d:4873/" },
   "main": "index.js",
   "scripts": {
     "test": "mocha test/test.js"
